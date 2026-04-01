@@ -130,7 +130,7 @@ def post_ai(req: AIRequest):
         system_prompt += f"\n\nIMPORTANT: Reply in {lang_name} unless the user switches back to English."
 
     payload = {
-        "model": "llama3-8b-8192",
+        "model": "llama-3.1-70b-versatile",
         "messages": [
             {"role": "system", "content": system_prompt},
             *[m for m in messages_raw if (m.get("content") or "").strip()],
@@ -139,6 +139,7 @@ def post_ai(req: AIRequest):
     }
 
     try:
+        print(f"DEBUG: Sending payload to Groq: {payload}")
         r = requests.post(
             groq_url,
             headers={
@@ -148,11 +149,14 @@ def post_ai(req: AIRequest):
             json=payload,
             timeout=60,
         )
+        print(f"DEBUG: Groq response status: {r.status_code}")
+        print(f"DEBUG: Groq response body: {r.text}")
         r.raise_for_status()
         data = r.json()
         content = (data.get("choices") or [{}])[0].get("message", {}).get("content")
         return AIResponse(content=content or "Sorry, I couldn't generate a response.")
     except Exception as e:
+        print(f"DEBUG: Error occurred: {e}")
         return AIResponse(content=f"Sorry, I'm having trouble connecting to the AI service. ({e})")
 
 @app.post("/clear-memory")
